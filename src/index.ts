@@ -44,6 +44,14 @@ export default {
 			return new Response("Method not allowed", { status: 405 });
 		}
 
+		// Handle document upload
+		if (url.pathname === "/api/upload") {
+			if (request.method === "POST") {
+				return handleUploadRequest(request, env);
+			}
+			return new Response("Method not allowed", { status: 405 });
+		}
+
 		// Handle 404 for unmatched routes
 		return new Response("Not found", { status: 404 });
 	},
@@ -100,3 +108,74 @@ async function handleChatRequest(
 		);
 	}
 }
+
+/**
+ * Handles document upload requests
+ */
+async function handleUploadRequest(
+	request: Request,
+	env: Env,
+): Promise<Response> {
+	try {
+		// Parse form data to get the file
+		const formData = await request.formData();
+		const file = formData.get("file") as File;
+
+		if (!file) {
+			return new Response("No file provided", { status: 400 });
+		}
+
+		// Read file content
+		const fileContent = await file.text();
+		const filename = file.name;
+
+		// Generate embeddings for the document
+		const embeddingResponse = await env.AI.run(
+			"@cf/baai/bge-base-en-v1.5",
+			{
+				text: fileContent,
+			},
+		);
+
+		const embedding = (embeddingResponse as { data: number[] }).data;
+
+		// Create a unique ID for the document
+		const docId = `doc_${Date.now()}_${Math.random().toString(36).substring(7)}`;
+
+		// Upsert the document into Vectorize
+		await env.VECTORIZE_INDEX.upsert([
+			{
+				id: docId,
+				values: embedding,
+				metadata: {
+					filename,
+					uploadedAt: new Date().toISOString(),
+					content: fileContent.substring(0, 1000), // Store first 1000 chars as preview
+				},
+			},
+		]);
+
+		return new Response(
+			JSON.stringify({
+				success: true,
+				message: `Document "${filename}" uploaded and vectorized successfully`,
+				documentId: docId,
+			}),
+			{
+				status: 200,
+				headers: { "content-type": "application/json" },
+			},
+		);
+	} catch (error) {
+		console.error("Error processing upload request:", error);
+		return new Response(
+			JSON.stringify({
+				error: "Failed to upload document",
+				details: error instanceof Error ? error.message : String(error),
+			}),
+			{
+				status: 500,
+				headers: { "content-type": "application/json" },
+			},
+		);
+	}}

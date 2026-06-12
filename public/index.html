@@ -88,6 +88,8 @@
 
 			.message-input {
 				display: flex;
+				align-items: flex-end;
+				gap: 0.5rem;
 				padding: 0.75rem;
 				border-top: 1px solid var(--border-color);
 				background-color: white;
@@ -103,15 +105,40 @@
 				min-height: 44px;
 			}
 
+			#upload-button {
+				padding: 0.75rem 1rem;
+				background-color: #6b7280;
+				color: white;
+				border: none;
+				border-radius: 4px;
+				cursor: pointer;
+				transition: background-color 0.2s;
+				white-space: nowrap;
+				font-size: 0.9rem;
+			}
+
+			#upload-button:hover {
+				background-color: #4b5563;
+			}
+
+			#upload-button:disabled {
+				background-color: var(--text-light);
+				cursor: not-allowed;
+			}
+
+			#upload-input {
+				display: none;
+			}
+
 			#send-button {
-				margin-left: 0.5rem;
-				padding: 0 1rem;
+				padding: 0.75rem 1rem;
 				background-color: var(--primary-color);
 				color: white;
 				border: none;
 				border-radius: 4px;
 				cursor: pointer;
 				transition: background-color 0.2s;
+				white-space: nowrap;
 			}
 
 			#send-button:hover {
@@ -121,6 +148,30 @@
 			#send-button:disabled {
 				background-color: var(--text-light);
 				cursor: not-allowed;
+			}
+
+			.upload-status {
+				display: none;
+				padding: 0.75rem;
+				margin-bottom: 0.5rem;
+				border-radius: 4px;
+				font-size: 0.9rem;
+			}
+
+			.upload-status.visible {
+				display: block;
+			}
+
+			.upload-status.success {
+				background-color: #d1fae5;
+				color: #065f46;
+				border: 1px solid #a7f3d0;
+			}
+
+			.upload-status.error {
+				background-color: #fee2e2;
+				color: #7f1d1d;
+				border: 1px solid #fca5a5;
 			}
 
 			.typing-indicator {
@@ -162,6 +213,7 @@
 				AI is thinking...
 			</div>
 
+			<div class="upload-status" id="upload-status"></div>
 			<div class="message-input">
 				<textarea
 					id="user-input"
@@ -169,6 +221,8 @@
 					rows="1"
 					autofocus
 				></textarea>
+				<input type="file" id="upload-input" accept=".txt,.pdf,.md,.doc,.docx" />
+				<button id="upload-button" title="Upload documents to vectorize database">📎 Upload</button>
 				<button id="send-button">Send</button>
 			</div>
 		</div>

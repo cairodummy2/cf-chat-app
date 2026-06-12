@@ -9,6 +9,9 @@ const chatMessages = document.getElementById("chat-messages");
 const userInput = document.getElementById("user-input");
 const sendButton = document.getElementById("send-button");
 const typingIndicator = document.getElementById("typing-indicator");
+const uploadButton = document.getElementById("upload-button");
+const uploadInput = document.getElementById("upload-input");
+const uploadStatus = document.getElementById("upload-status");
 
 // Chat state
 let chatHistory = [
@@ -36,6 +39,76 @@ userInput.addEventListener("keydown", function (e) {
 
 // Send button click handler
 sendButton.addEventListener("click", sendMessage);
+
+// Upload button click handler
+uploadButton.addEventListener("click", () => {
+	uploadInput.click();
+});
+
+// Upload file input change handler
+uploadInput.addEventListener("change", async (e) => {
+	const file = e.target.files?.[0];
+	if (!file) return;
+
+	// Clear previous status
+	hideUploadStatus();
+
+	// Show uploading status
+	showUploadStatus(`Uploading ${file.name}...`, "");
+
+	try {
+		await uploadDocument(file);
+		showUploadStatus(`✓ Successfully uploaded: ${file.name}`, "success");
+
+		// Clear input for next upload
+		uploadInput.value = "";
+	} catch (error) {
+		showUploadStatus(
+			`✗ Failed to upload: ${error instanceof Error ? error.message : String(error)}`,
+			"error",
+		);
+	}
+});
+
+/**
+ * Uploads a document to the vectorize database
+ */
+async function uploadDocument(file) {
+	const formData = new FormData();
+	formData.append("file", file);
+
+	const response = await fetch("/api/upload", {
+		method: "POST",
+		body: formData,
+	});
+
+	if (!response.ok) {
+		const error = await response.text();
+		throw new Error(error || "Failed to upload document");
+	}
+
+	const result = await response.json();
+	return result;
+}
+
+/**
+ * Shows upload status message
+ */
+function showUploadStatus(message, type = "") {
+	uploadStatus.textContent = message;
+	uploadStatus.classList.add("visible");
+	if (type) {
+		uploadStatus.classList.add(type);
+	}
+}
+
+/**
+ * Hides upload status message
+ */
+function hideUploadStatus() {
+	uploadStatus.classList.remove("visible", "success", "error");
+	uploadStatus.textContent = "";
+}
 
 /**
  * Sends a message to the chat API and processes the response
